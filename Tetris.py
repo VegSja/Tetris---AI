@@ -1,6 +1,8 @@
 import pygame #Importing pygame
+import numpy as np
+from pieces import *
 
-#TODO: Split window into game and info
+#TODO: Figure out how to make matrix of gameboard
 
 pygame.init()
 
@@ -17,9 +19,33 @@ class UI():
 	white = (255,255,255)
 	black = (0,0,0)
 	grey = (50,50,50)
+	blue = (0,0,255)
 
 	#Colors tetriminos
 
+class Piece():
+
+	def __init__(self, x, y, number, gridArr_x, gridArr_y, screen):
+		self.gridArr_x = gridArr_x
+		self.gridArr_y = gridArr_y
+		self.screen = screen
+		self.x = x
+		self.y = y
+		self.number = number
+		self.draw_piece(self.x, self.y, self.number)
+		print(gridArr_x, gridArr_y)
+
+	def draw_rect(self, x, y, rect_size, color):
+		rect = pygame.Rect(x, y, rect_size, rect_size)
+		pygame.draw.rect(self.screen, color, rect)
+
+	def draw_piece(self, board_x, board_y, pieceNb):
+		Piecemap = Pieces.pieces[pieceNb - 1][0]
+		for i in range(4):
+			for j in range(4):
+				if Piecemap[j][i] != 0:
+					self.draw_rect(self.gridArr_x[board_x + j], self.gridArr_y[board_y + i], 39, UI.blue)
+					print("Drawing rect at: ",self.gridArr_x[board_x + j], self.gridArr_y[board_y + i])
 
 class App():
 
@@ -31,6 +57,8 @@ class App():
 
 	def create_grid(self, nb_height, nb_width, grid_size):
 		grid_color = (UI.black)
+		self.grid_x = [0,41,82,123,164,205,246,287,328,369]
+		self.grid_y = [0,41,82,123,164,205,246,287,328,369,410,451,492,533,574,615,656,697,738,779]
 		for y in range(nb_height):
 			for x in range(nb_width):
 				rect = pygame.Rect(x*(grid_size+2), y*(grid_size+2), grid_size, grid_size)
@@ -42,7 +70,7 @@ class App():
 
 		#Text
 		text_header = UI.h1.render("TETRIS", 1, UI.white)
-		text_underHeader = UI.u1.render("A game made by Vegard Sjåvik", 1, UI.white)
+		text_underHeader = UI.u1.render("Made by Vegard Sjåvik", 1, UI.white)
 		text_nextpiece = UI.h2.render("NEXT PIECE:", 1, UI.white)
 		text_Score = UI.h2.render("SCORE: ", 1, UI.white)
 		text_distance = UI.h2.render("Distace: ", 1, UI.white)
@@ -66,11 +94,8 @@ class App():
 
 		#Create grid in game_board
 		self.create_grid(20, 10, 39)
-
 		self.draw_scorebar()
 		self.Update()
-
-
 
 	def on_init(self):
 		pygame.init()	#Initialize the pygame module
