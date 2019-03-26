@@ -40,13 +40,14 @@ class Piece():
 		self.number = number
 		self.falling = True
 		self.draw_piece(self.x, self.y, self.number)
-		print(gridArr_x, gridArr_y)
+
 
 	def draw_rect(self, x, y, rect_size, color):
 		rect = pygame.Rect(x, y, rect_size, rect_size)
 		pygame.draw.rect(self.screen, color, rect)
 
 	def draw_piece(self, board_x, board_y, pieceNb):
+		self.squares_pos = [[],[]] #Holds the x values in index 0 and y values in index 1
 		self.board_x = board_x
 		self.board_y = board_y
 		self.pieceNb = pieceNb
@@ -55,8 +56,11 @@ class Piece():
 			for j in range(4):
 				if Piecemap[j][i] != 0:
 					self.draw_rect(self.gridArr_x[board_x + j], self.gridArr_y[board_y + i], 32, UI.blue)
+					self.squares_pos[0].append(board_x + j)
+					self.squares_pos[1].append(board_y + i)
 					#print("Drawing rect at: ",self.gridArr_x[board_x + j], self.gridArr_y[board_y + i])
 					#print("Current pos X: ", self.board_x, "Y: ", self.board_y)
+		print("Squares on this tetrimino is: ", self.squares_pos)
 
 	def undraw_piece(self):
 		Piecemap = Pieces.pieces[self.pieceNb - 1][0]
@@ -71,13 +75,26 @@ class Piece():
 		self.undraw_piece()
 		#print("##########################trying to draw piece at ", new_board_x, ", ", new_board_y)
 		self.draw_piece(new_board_x, new_board_y, self.pieceNb)
+		self.collision_detection()
 
-	def posX(self):
-		#print("Current pos: ", self.board_x)
-		return self.board_x
+	def bottomSquares(self):
+		lowestsquare = max(self.squares_pos[1]) #Returns the highest value in the y-values
+		self.index_lowestsquare = [i for i, x in enumerate(self.squares_pos[1]) if x == lowestsquare] #Returns the indexes of the lowest squares as an array
+		print("Index of lowestsquare: " , self.index_lowestsquare)
 
-	def posY(self):
-		return self.board_y
+
+	def collision_detection(self):
+		self.bottomSquares()
+		self.next_square_y = []
+		for x in range (0, len(self.index_lowestsquare)):
+			self.next_square_y = self.squares_pos[1][self.index_lowestsquare[x]] + 1
+			print("Next square is: ", self.next_square_y)
+		if self.next_square_y == 20:
+			self.falling = False
+
+	def __del__(self):
+		print("Deleted object")
+
 
 
 class App():
@@ -161,21 +178,29 @@ class App():
 			self.time_last_action = 0
 			print("FALLING")
 			pygame.display.update()
-			if self.currentPiece.board_y == 18:
-				self.currentPiece.falling = False
+		#	if self.currentPiece.board_y == 18:
+		#		self.currentPiece.falling = False
 
 
 	def Update(self):
+		if self.currentPiece == False:
+			self.currentPiece = Piece(5, 5, random.randint(0,7), self.grid_x, self.grid_y, self.screen)
+			currentPiece = True
 		if self.currentPiece != False:
 			self.auto_fall()
 
 		#Keyboard events
 		for event in pygame.event.get():
 			if event.type == KEYDOWN:
-				if event.key == K_SPACE:
-					self.currentPiece = Piece(5, 5, 1, self.grid_x, self.grid_y, self.screen)
+				if event.key == K_SPACE and self.currentPiece == False:
+					self.currentPiece = Piece(5, 5, 4, self.grid_x, self.grid_y, self.screen)
 					pygame.display.update()
-				if event.key == K_w:
+				if event.key == K_BACKSPACE:
+					self.currentPiece.undraw_piece()
+					del self.currentPiece
+					pygame.display.update()
+					self.currentPiece = False
+				if event.key == K_w and self.currentPiece == True:
 					print(self.currentPiece.board_x)
 					self.currentPiece.move(self.currentPiece.board_x, self.currentPiece.board_y - 1) 
 					pygame.display.update()
