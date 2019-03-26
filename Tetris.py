@@ -4,7 +4,7 @@ from pieces import *
 from pygame.locals import *
 import random
 
-#TODO:
+#TODO: Make the collision detection
 
 pygame.init()
 
@@ -38,6 +38,7 @@ class Piece():
 		self.x = x
 		self.y = y
 		self.number = number
+		self.falling = True
 		self.draw_piece(self.x, self.y, self.number)
 		print(gridArr_x, gridArr_y)
 
@@ -53,7 +54,7 @@ class Piece():
 		for i in range(4):
 			for j in range(4):
 				if Piecemap[j][i] != 0:
-					self.draw_rect(self.gridArr_x[board_x + j], self.gridArr_y[board_y + i], 39, UI.blue)
+					self.draw_rect(self.gridArr_x[board_x + j], self.gridArr_y[board_y + i], 32, UI.blue)
 					#print("Drawing rect at: ",self.gridArr_x[board_x + j], self.gridArr_y[board_y + i])
 					#print("Current pos X: ", self.board_x, "Y: ", self.board_y)
 
@@ -62,13 +63,13 @@ class Piece():
 		for i in range(4):
 			for j in range(4):
 				if Piecemap[j][i] != 0:
-					self.draw_rect(self.gridArr_x[self.board_x + j], self.gridArr_y[self.board_y + i], 39, UI.black)
+					self.draw_rect(self.gridArr_x[self.board_x + j], self.gridArr_y[self.board_y + i], 32, UI.black)
 					#print("Removing rect at: ",self.gridArr_x[self.board_x + j], self.gridArr_y[self.board_y + i])
 
 
 	def move(self, new_board_x, new_board_y):
 		self.undraw_piece()
-		print("##########################trying to draw piece at ", new_board_x, ", ", new_board_y)
+		#print("##########################trying to draw piece at ", new_board_x, ", ", new_board_y)
 		self.draw_piece(new_board_x, new_board_y, self.pieceNb)
 
 	def posX(self):
@@ -92,12 +93,13 @@ class App():
 
 	def create_grid(self, nb_height, nb_width, grid_size):
 		grid_color = (UI.black)
-		self.grid_x = [0,41,82,123,164,205,246,287,328,369]
-		self.grid_y = [0,41,82,123,164,205,246,287,328,369,410,451,492,533,574,615,656,697,738,779]
+		self.grid_x = [0,34,68,102,136,170,204,238,272,306]
+		self.grid_y = [0,34,68,102,136,170,204,238,272,306,340,374,408,442,476,510,544,578,612,646]
 		for y in range(nb_height):
 			for x in range(nb_width):
 				rect = pygame.Rect(x*(grid_size+2), y*(grid_size+2), grid_size, grid_size)
 				pygame.draw.rect(self.screen, grid_color, rect)
+				print("X: ", x*(grid_size+2), "Y: ", y*(grid_size+2))
 
 	def draw_scorebar(self):
 		#Draw sidebar
@@ -128,7 +130,7 @@ class App():
 		self.screen.fill(UI.white)
 
 		#Create grid in game_board
-		self.create_grid(20, 10, 39)
+		self.create_grid(20, 10, 32)
 		self.draw_scorebar()
 		pygame.display.update()
 
@@ -153,12 +155,14 @@ class App():
 	def auto_fall(self):
 		dt = clock.tick() #Sets up framerate
 		self.time_last_action += dt
-		print("Should fall", self.time_last_action)
-		if self.time_last_action > 250:
+		#print("Should fall", self.time_last_action)
+		if self.time_last_action > 250 and self.currentPiece.falling == True:
 			self.currentPiece.move(self.currentPiece.board_x, self.currentPiece.board_y + 1)
 			self.time_last_action = 0
 			print("FALLING")
 			pygame.display.update()
+			if self.currentPiece.board_y == 18:
+				self.currentPiece.falling = False
 
 
 	def Update(self):
@@ -175,10 +179,6 @@ class App():
 					print(self.currentPiece.board_x)
 					self.currentPiece.move(self.currentPiece.board_x, self.currentPiece.board_y - 1) 
 					pygame.display.update()
-
-
-
-
 		
 	def start_running(self):
 		if self.on_init() == False:
@@ -195,5 +195,5 @@ class App():
 
 
 if __name__ == "__main__":
-	app = App(820, 820, "TETRIS", "jeff.png")
+	app = App(680, 680, "TETRIS", "jeff.png")
 	app.start_running()
