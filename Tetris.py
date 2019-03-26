@@ -1,10 +1,16 @@
 import pygame #Importing pygame
 import numpy as np
 from pieces import *
+from pygame.locals import *
+import random
 
-#TODO: Figure out how to make matrix of gameboard
+#TODO:
 
 pygame.init()
+
+clock = pygame.time.Clock()
+
+
 
 class UI():
 
@@ -40,20 +46,49 @@ class Piece():
 		pygame.draw.rect(self.screen, color, rect)
 
 	def draw_piece(self, board_x, board_y, pieceNb):
+		self.board_x = board_x
+		self.board_y = board_y
+		self.pieceNb = pieceNb
 		Piecemap = Pieces.pieces[pieceNb - 1][0]
 		for i in range(4):
 			for j in range(4):
 				if Piecemap[j][i] != 0:
 					self.draw_rect(self.gridArr_x[board_x + j], self.gridArr_y[board_y + i], 39, UI.blue)
-					print("Drawing rect at: ",self.gridArr_x[board_x + j], self.gridArr_y[board_y + i])
+					#print("Drawing rect at: ",self.gridArr_x[board_x + j], self.gridArr_y[board_y + i])
+					#print("Current pos X: ", self.board_x, "Y: ", self.board_y)
+
+	def undraw_piece(self):
+		Piecemap = Pieces.pieces[self.pieceNb - 1][0]
+		for i in range(4):
+			for j in range(4):
+				if Piecemap[j][i] != 0:
+					self.draw_rect(self.gridArr_x[self.board_x + j], self.gridArr_y[self.board_y + i], 39, UI.black)
+					#print("Removing rect at: ",self.gridArr_x[self.board_x + j], self.gridArr_y[self.board_y + i])
+
+
+	def move(self, new_board_x, new_board_y):
+		self.undraw_piece()
+		print("##########################trying to draw piece at ", new_board_x, ", ", new_board_y)
+		self.draw_piece(new_board_x, new_board_y, self.pieceNb)
+
+	def posX(self):
+		#print("Current pos: ", self.board_x)
+		return self.board_x
+
+	def posY(self):
+		return self.board_y
+
 
 class App():
+
 
 	def __init__(self, width, height, app_title, logo_name):
 		self.width = width
 		self.height = height
 		self.app_title = app_title
 		self.logo_name = logo_name
+		self.currentPiece = False
+		self.time_last_action = 0
 
 	def create_grid(self, nb_height, nb_width, grid_size):
 		grid_color = (UI.black)
@@ -95,7 +130,7 @@ class App():
 		#Create grid in game_board
 		self.create_grid(20, 10, 39)
 		self.draw_scorebar()
-		self.Update()
+		pygame.display.update()
 
 	def on_init(self):
 		pygame.init()	#Initialize the pygame module
@@ -114,14 +149,43 @@ class App():
 	def on_event(self, event):
 		if event.type == pygame.QUIT:
 			self.running = False
+
+	def auto_fall(self):
+		dt = clock.tick() #Sets up framerate
+		self.time_last_action += dt
+		print("Should fall", self.time_last_action)
+		if self.time_last_action > 250:
+			self.currentPiece.move(self.currentPiece.board_x, self.currentPiece.board_y + 1)
+			self.time_last_action = 0
+			print("FALLING")
+			pygame.display.update()
+
+
 	def Update(self):
-		pygame.display.update()
+		if self.currentPiece != False:
+			self.auto_fall()
+
+		#Keyboard events
+		for event in pygame.event.get():
+			if event.type == KEYDOWN:
+				if event.key == K_SPACE:
+					self.currentPiece = Piece(5, 5, 1, self.grid_x, self.grid_y, self.screen)
+					pygame.display.update()
+				if event.key == K_w:
+					print(self.currentPiece.board_x)
+					self.currentPiece.move(self.currentPiece.board_x, self.currentPiece.board_y - 1) 
+					pygame.display.update()
+
+
+
+
 		
 	def start_running(self):
 		if self.on_init() == False:
 			self.running = False
 
 		while(self.running):
+			self.Update()
 			for event in pygame.event.get():
 				self.on_event(event)
 
