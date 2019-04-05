@@ -27,12 +27,11 @@ class UI():
 	grey = (50,50,50)
 	blue = (0,0,255)
 	red = (255,0,0)
-
-	#Colors tetriminos
+	orange = (255, 102, 0)
 
 class Piece():
 
-	def __init__(self, x, y, number, gridArr_x, gridArr_y, screen, blocked_coordinates):
+	def __init__(self, x, y, number, gridArr_x, gridArr_y, screen, blocked_coordinates, color):
 		self.gridArr_x = gridArr_x
 		self.gridArr_y = gridArr_y
 		self.screen = screen
@@ -40,16 +39,16 @@ class Piece():
 		self.y = y
 		self.blocked_coordinates = blocked_coordinates
 		self.number = number
+		self.color = color
 		self.falling = True
 		self.blocked = False
-		self.draw_piece(self.x, self.y, self.number)
-
+		self.draw_piece(x, y, self.number, self.color)
 
 	def draw_rect(self, x, y, rect_size, color):
 		rect = pygame.Rect(x, y, rect_size, rect_size)
 		pygame.draw.rect(self.screen, color, rect)
 
-	def draw_piece(self, board_x, board_y, pieceNb):
+	def draw_piece(self, board_x, board_y, pieceNb, color):
 		self.squares_pos = [[],[]] #Holds the x values in index 0 and y values in index 1
 		self.board_x = board_x
 		self.board_y = board_y
@@ -58,49 +57,26 @@ class Piece():
 		for i in range(4):
 			for j in range(4):
 				if Piecemap[j][i] != 0:
-					if board_y + i < 20 and board_x + j > 0 and board_x + j < 10: 
-						self.draw_rect(self.gridArr_x[board_x + j], self.gridArr_y[board_y + i], 32, UI.blue)
+					if board_y + i < 20 and board_x + j > 0 and board_x + j < 10:
+						self.draw_rect(self.gridArr_x[board_x + j], self.gridArr_y[board_y + i], 32, color)
 						self.squares_pos[0].append(board_x + j)
 						self.squares_pos[1].append(board_y + i)
-					#print("Drawing rect at: ",self.gridArr_x[board_x + j], self.gridArr_y[board_y + i])
-					#print("Current pos X: ", self.board_x, "Y: ", self.board_y)
-		print("Squares on this tetrimino is: ", self.squares_pos)
+				#print("Drawing rect at: ",self.squares_pos[0], self.squares_pos[1])
 
 	def undraw_piece(self):
 		Piecemap = Pieces.pieces[self.pieceNb - 1][0]
 		for i in range(4):
 			for j in range(4):
 				if Piecemap[j][i] != 0:
-					self.draw_rect(self.gridArr_x[self.board_x + j], self.gridArr_y[self.board_y + i], 32, UI.black)
+					if self.board_y + i < 20 and self.board_x + j > 0 and self.board_x + j < 10:
+						self.draw_rect(self.gridArr_x[self.board_x + j], self.gridArr_y[self.board_y + i], 32, UI.black)
 					#print("Removing rect at: ",self.gridArr_x[self.board_x + j], self.gridArr_y[self.board_y + i])
 
 
 	def move(self, new_board_x, new_board_y):
 		self.undraw_piece()
 		#print("##########################trying to draw piece at ", new_board_x, ", ", new_board_y)
-		self.draw_piece(new_board_x, new_board_y, self.pieceNb)
-		self.collision_detection()
-
-
-	def collision_detection(self):
-		Piecemap = Pieces.pieces[self.pieceNb - 1][0]
-		for i in range(4):
-			for j in range(4):
-				if Piecemap[j][i] != 0:
-					if self.board_y + i + 1 == 20:
-						self.falling = False
-				#Add more actions for what will not be fallable __________________________________________________________________
-					if self.board_x + j == 10 or self.board_x - j == 0:
-						self.blocked = True
-
-					for x in range(0, len(self.blocked_coordinates[0])):
-						for k in range (0, 3):
-							if self.squares_pos[0][k] + 1 == self.blocked_coordinates[0][x] and self.squares_pos[1][k] +1 == self.blocked_coordinates[1][x]:
-							#if self.board_x + j == self.blocked_coordinates[0][x] and self.board_y + i +1 == self.blocked_coordinates[1][y]:
-								print("Blocked by ", self.squares_pos[0][k]+1, self.squares_pos[1][k] + 1, " == ", self.blocked_coordinates[0][x], self.blocked_coordinates[1][x])
-								self.blocked = True
-								self.falling = False
-
+		self.draw_piece(new_board_x, new_board_y, self.pieceNb, self.color)
 
 	def __del__(self):
 		print("Deleted object")
@@ -183,32 +159,41 @@ class App():
 	def auto_fall(self):
 		dt = clock.tick() #Sets up framerate
 		self.time_last_action += dt
-		#print("Should fall", self.time_last_action)
 		if self.time_last_action > 250 and self.currentPiece.falling == True:
 			self.currentPiece.move(self.currentPiece.board_x, self.currentPiece.board_y + 1)
+			self.nextPiecePos.move(self.nextPiecePos.board_x, self.nextPiecePos.board_y + 1)
+			for x in range(0, len(self.nextPiecePos.squares_pos[1])):
+				if self.nextPiecePos.squares_pos[1][x] + 1 == 20:
+					self.currentPiece.falling = False
+					print("Can't fall")
+			for y in range(0, len(self.blocked_coordinates[0])):
+				for z in range(0, len(self.nextPiecePos.squares_pos[1])):
+					if self.nextPiecePos.squares_pos[0][z] == self.blocked_coordinates[0][y] and self.nextPiecePos.squares_pos[1][z] == self.blocked_coordinates[1][y]:
+						self.currentPiece.falling = False
 			self.time_last_action = 0
 			pygame.display.update()
-		#	if self.currentPiece.board_y == 18:
-		#		self.currentPiece.falling = False
 
 
 	def Update(self):
+		randNumb = random.randint(0,7)
 		if self.currentPiece_availible == False:
 			print("Spawning new piece")
-			self.currentPiece = Piece(5, 5, random.randint(0,7), self.grid_x, self.grid_y, self.screen, self.blocked_coordinates)
+			self.nextPiecePos = Piece(5, 6, randNumb, self.grid_x, self.grid_y, self.screen, self.blocked_coordinates, UI.red)
+			self.currentPiece = Piece(5, 5, randNumb, self.grid_x, self.grid_y, self.screen, self.blocked_coordinates, UI.blue)
 			self.currentPiece_availible = True
 			print("Not avaliblel")
-		elif self.currentPiece_availible != False:
-			self.auto_fall()
 
 		if self.currentPiece.blocked == True or self.currentPiece.falling == False:
+			#self.nextPiecePos.__del__()
 			for x in range(0, len(self.currentPiece.squares_pos[0])):
 				self.blocked_coordinates[0].append(self.currentPiece.squares_pos[0][x])
 			for y in range(0, len(self.currentPiece.squares_pos[1])):
 				self.blocked_coordinates[1].append(self.currentPiece.squares_pos[1][y])
-			print("Blocked Coordinates X: ", self.blocked_coordinates[0], "Y: ", self.blocked_coordinates[1])
+			for z in range(0, len(self.blocked_coordinates[0])):
+				rect = pygame.Rect(self.grid_x[self.blocked_coordinates[0][z]], self.grid_y[self.blocked_coordinates[1][z]], 32, 32)
+				#pygame.draw.rect(self.screen, UI.red, rect)
+			pygame.display.update()
 			self.currentPiece_availible = False
-			#print("Blocked Coordinates X: ", self.blocked_coordinates[0], "Y: ", self.blocked_coordinates[1])
 
 		#Keyboard events
 		for event in pygame.event.get():
@@ -225,6 +210,9 @@ class App():
 					print(self.currentPiece.board_x)
 					self.currentPiece.move(self.currentPiece.board_x, self.currentPiece.board_y - 1) 
 					pygame.display.update()
+
+		if self.currentPiece_availible != False:
+			self.auto_fall()
 
 		
 	def start_running(self):
